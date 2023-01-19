@@ -9,14 +9,56 @@ class Program
 
         try
         {
-            if (Directory.Exists(path))
+            DirectoryInfo directory = new DirectoryInfo(path);
+
+            if (directory.Exists)
             {
-                long size = GetDirectorySize(path);
-                Console.WriteLine("The size of the folder is: " + size + " bytes");
+                
+                DateTime currentTime = DateTime.Now;
+                long initialSize = GetDirectorySize(path);
+                Console.WriteLine("The initial size of the folder is: " + initialSize + " bytes");
+                int deletedFiles = 0;
+                long deletedSize = 0;
+                
+                foreach (FileInfo file in directory.GetFiles())
+                {
+                    
+                    TimeSpan timeDifference = currentTime - file.LastAccessTime;
+
+                    
+                    if (timeDifference.TotalMinutes > 30)
+                    {
+                       
+                        deletedSize += file.Length;
+                        file.Delete();
+                        deletedFiles++;
+                    }
+                }
+
+                
+                foreach (DirectoryInfo subDirectory in directory.GetDirectories())
+                {
+                    
+                    TimeSpan timeDifference = currentTime - subDirectory.LastAccessTime;
+
+                    
+                    if (timeDifference.TotalMinutes > 30)
+                    {
+                        
+                        deletedSize += GetDirectorySize(subDirectory.FullName);
+                        subDirectory.Delete(true);
+                    }
+                }
+
+                Console.WriteLine("Successfully cleaned the folder.");
+                Console.WriteLine("Number of deleted files: " + deletedFiles);
+                Console.WriteLine("Deleted size: " + deletedSize + " bytes");
+                long finalSize = GetDirectorySize(path);
+                Console.WriteLine("The final size of the folder is: " + finalSize + " bytes");
             }
             else
             {
-                Console.WriteLine("The specified folder does not exist.");//обработка исключений
+                Console.WriteLine("The specified folder does not exist.");
             }
         }
         catch (UnauthorizedAccessException ex)
@@ -35,23 +77,21 @@ class Program
     {
         long size = 0;
 
-        // получает все файлы директории
+        
         string[] files = Directory.GetFiles(path);
         foreach (string file in files)
         {
-            // добавляет размер файлов
+            
             FileInfo info = new FileInfo(file);
             size += info.Length;
         }
 
-        // получает все субдиректории
+        
         string[] subDirectories = Directory.GetDirectories(path);
         foreach (string subDirectory in subDirectories)
         {
-            // добавляет размер всех директорий в итоговый размер
             size += GetDirectorySize(subDirectory);
         }
-
         return size;
     }
 }
