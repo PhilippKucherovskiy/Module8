@@ -1,115 +1,44 @@
 ﻿using System;
 using System.IO;
 
+
 class Program
 {
     static void Main(string[] args)
     {
-        string path = ""; 
+        string binaryFilePath = "D:\\Загрузки"; 
+        string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        string studentsPath = Path.Combine(desktopPath, "Students"); if (!Directory.Exists(studentsPath))
+            Directory.CreateDirectory(studentsPath);
 
-        try
+        if (File.Exists(binaryFilePath))
         {
-            DirectoryInfo directory = new DirectoryInfo(path);
-
-            if (directory.Exists)
+            using (FileStream binaryFile = new FileStream(binaryFilePath, FileMode.Open))
             {
-                
-                DateTime currentTime = DateTime.Now;
-                long initialSize = GetDirectorySize(path);
-                Console.WriteLine("The initial size of the folder is: " + initialSize + " bytes");
-                int deletedFiles = 0;
-                long deletedSize = 0;
-                
-                foreach (FileInfo file in directory.GetFiles())
+                using (BinaryReader binaryReader = new BinaryReader(binaryFile))
                 {
-                    
-                    TimeSpan timeDifference = currentTime - file.LastAccessTime;
-
-                    
-                    if (timeDifference.TotalMinutes > 30)
+                    while (binaryFile.Position < binaryFile.Length)
                     {
-                        
-                        deletedSize += file.Length;
-                        file.Delete();
-                        deletedFiles++;
+                        string name = binaryReader.ReadString();
+                        string group = binaryReader.ReadString();
+                        DateTime dateOfBirth = new DateTime(binaryReader.ReadInt64());
+
+                        string groupPath = Path.Combine(studentsPath, group + ".txt");
+                        if (!File.Exists(groupPath))
+                            File.Create(groupPath).Close();
+
+                        using (StreamWriter sw = new StreamWriter(groupPath, true))
+                        {
+                            sw.WriteLine(name + ", " + dateOfBirth.ToShortDateString());
+                        }
                     }
                 }
-
-                
-                foreach (DirectoryInfo subDirectory in directory.GetDirectories())
-                {
-                    
-                    TimeSpan timeDifference = currentTime - subDirectory.LastAccessTime;
-                    
-                    if (timeDifference.TotalMinutes > 30)
-                    {
-                        
-                        deletedSize += GetDirectorySize(subDirectory.FullName);
-                        subDirectory.Delete(true);
-                    }
-                }
-
-                Console.WriteLine("Successfully cleaned the folder.");
-                Console.WriteLine("Number of deleted files: " + deletedFiles);
-                Console.WriteLine("Deleted size: " + deletedSize + " bytes");
-                long finalSize = GetDirectorySize(path);
-                Console.WriteLine("The final size of the folder is: " + finalSize + " bytes");
             }
-            else
-            {
-                Console.WriteLine("The specified folder does not exist.");
-            }
+            Console.WriteLine("Successfully loaded data from binary file to text files in the Students folder on the desktop.");
         }
-        catch (UnauthorizedAccessException ex)
+        else
         {
-            Console.WriteLine("You do not have the necessary permissions to access this folder.");
-            Console.WriteLine("Error message: " + ex.Message);
+            Console.WriteLine("The specified binary file was not found.");
         }
-        catch (DirectoryNotFoundException ex)
-        {
-            Console.WriteLine("The specified folder path is not valid.");
-            Console.WriteLine("Error message: " + ex.Message);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("An error occurred while trying to access the folder.");
-            Console.WriteLine("Error message: " + ex.Message);
-        }
-    }
-
-    static long GetDirectorySize(string path)
-    {
-        long size = 0;
-
-        
-        string[] files = Directory.GetFiles(path);
-        foreach (string file in files)
-        {
-            
-            FileInfo info = new FileInfo(file);
-            size += info.Length;
-        }    
-        string[] subDirectories = Directory.GetDirectories(path);
-        foreach (string subDirectory in subDirectories)
-        {
-            try
-            {
-                
-                size += GetDirectorySize(subDirectory);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                Console.WriteLine("You do not have the necessary permissions to access the subdirectory: " + subDirectory);
-                Console.WriteLine("Error message: " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred while trying to access the subdirectory: " + subDirectory);
-                Console.WriteLine("Error message: " + ex.Message);
-            }
-        }
-
-        return size;
     }
 }
-
