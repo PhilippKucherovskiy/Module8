@@ -28,7 +28,7 @@ class Program
                     
                     if (timeDifference.TotalMinutes > 30)
                     {
-                       
+                        
                         deletedSize += file.Length;
                         file.Delete();
                         deletedFiles++;
@@ -40,7 +40,6 @@ class Program
                 {
                     
                     TimeSpan timeDifference = currentTime - subDirectory.LastAccessTime;
-
                     
                     if (timeDifference.TotalMinutes > 30)
                     {
@@ -66,6 +65,11 @@ class Program
             Console.WriteLine("You do not have the necessary permissions to access this folder.");
             Console.WriteLine("Error message: " + ex.Message);
         }
+        catch (DirectoryNotFoundException ex)
+        {
+            Console.WriteLine("The specified folder path is not valid.");
+            Console.WriteLine("Error message: " + ex.Message);
+        }
         catch (Exception ex)
         {
             Console.WriteLine("An error occurred while trying to access the folder.");
@@ -84,14 +88,28 @@ class Program
             
             FileInfo info = new FileInfo(file);
             size += info.Length;
-        }
-
-        
+        }    
         string[] subDirectories = Directory.GetDirectories(path);
         foreach (string subDirectory in subDirectories)
         {
-            size += GetDirectorySize(subDirectory);
+            try
+            {
+                
+                size += GetDirectorySize(subDirectory);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine("You do not have the necessary permissions to access the subdirectory: " + subDirectory);
+                Console.WriteLine("Error message: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("An error occurred while trying to access the subdirectory: " + subDirectory);
+                Console.WriteLine("Error message: " + ex.Message);
+            }
         }
+
         return size;
     }
 }
+
