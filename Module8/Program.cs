@@ -5,50 +5,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        string path = "";   
+        string path = ""; 
 
         try
         {
-            DirectoryInfo directory = new DirectoryInfo(path);
-
-            if (directory.Exists)
+            if (Directory.Exists(path))
             {
-                // время сейчас
-                DateTime currentTime = DateTime.Now;
-
-                // перечисляет все файлы в директории
-                foreach (FileInfo file in directory.GetFiles())
-                {
-                    // вычисляет разницу между действительным временем и временем файла
-                    TimeSpan timeDifference = currentTime - file.LastAccessTime;
-
-                    // проверяет наличие разницы больше 30 минут
-                    if (timeDifference.TotalMinutes > 30)
-                    {
-                        // удаляет подходящий файл
-                        file.Delete();
-                    }
-                }
-
-                // перечисляет файлы субдиректории в директории
-                foreach (DirectoryInfo subDirectory in directory.GetDirectories())
-                {
-                    // вычисляет разницу между текущим временем и временем доступа к папке
-                    TimeSpan timeDifference = currentTime - subDirectory.LastAccessTime;
-
-                    // проверяет наличие разницы больше 30 минут
-                    if (timeDifference.TotalMinutes > 30)
-                    {
-                        // удаляет папку
-                        subDirectory.Delete(true);
-                    }
-                }
-
-                Console.WriteLine("Successfully cleaned the folder.");
+                long size = GetDirectorySize(path);
+                Console.WriteLine("The size of the folder is: " + size + " bytes");
             }
             else
             {
-                Console.WriteLine("The specified folder does not exist.");
+                Console.WriteLine("The specified folder does not exist.");//обработка исключений
             }
         }
         catch (UnauthorizedAccessException ex)
@@ -61,5 +29,29 @@ class Program
             Console.WriteLine("An error occurred while trying to access the folder.");
             Console.WriteLine("Error message: " + ex.Message);
         }
+    }
+
+    static long GetDirectorySize(string path)
+    {
+        long size = 0;
+
+        // получает все файлы директории
+        string[] files = Directory.GetFiles(path);
+        foreach (string file in files)
+        {
+            // добавляет размер файлов
+            FileInfo info = new FileInfo(file);
+            size += info.Length;
+        }
+
+        // получает все субдиректории
+        string[] subDirectories = Directory.GetDirectories(path);
+        foreach (string subDirectory in subDirectories)
+        {
+            // добавляет размер всех директорий в итоговый размер
+            size += GetDirectorySize(subDirectory);
+        }
+
+        return size;
     }
 }
